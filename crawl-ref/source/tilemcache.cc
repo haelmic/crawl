@@ -1516,8 +1516,8 @@ mcache_mbeast::mcache_mbeast(const monster_info& minf)
         layers.push_back(TILEP_MUTANT_BEAST_WING_BASE + tier);
     if (facets & (1 << BF_OX))
         layers.push_back(TILEP_MUTANT_BEAST_OX + tier);
-    //if (facets & (1 << BF_WEIRD))
-    //    layers.push_back(TILEP_MUTANT_BEAST_WEIRD + tier);
+    if (facets & (1 << BF_WEIRD))
+        layers.push_back(TILEP_MUTANT_BEAST_WEIRD + tier);
     if (facets & (1 << BF_STING))
         layers.push_back(TILEP_MUTANT_BEAST_STING + tier);
     if (facets & (1 << BF_BAT))

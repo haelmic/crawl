@@ -686,6 +686,11 @@ fire2
 fire3
 fire4
 fire5
+weird1 MUTANT_BEAST_WEIRD
+weird2
+weird3
+weird4
+weird5
 horn1 MUTANT_BEAST_HORN
 horn2
 horn3
