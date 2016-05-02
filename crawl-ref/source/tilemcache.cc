@@ -1507,25 +1507,19 @@ mcache_mbeast::mcache_mbeast(const monster_info& minf)
     // an ordered list of tiers and corresponding tiles to add.
     // tiers may appear repeatedly, if they have multiple layers.
     static const vector<pair<beast_facet, tileidx_t>> facet_layers = {
-        { BF_FIRE, TILEP_MUTANT_BEAST_FIRE },
+        { BF_FIRE,  TILEP_MUTANT_BEAST_FIRE },
+        { BF_BAT,   TILEP_MUTANT_BEAST_WING_BASE },
+        { BF_OX,    TILEP_MUTANT_BEAST_OX },
+        { BF_WEIRD, TILEP_MUTANT_BEAST_WEIRD },
+        { BF_STING, TILEP_MUTANT_BEAST_STING },
+        { BF_BAT,   TILEP_MUTANT_BEAST_WING_TOP },
+        { BF_SHOCK, TILEP_MUTANT_BEAST_SHOCK },
+        { BF_OX,    TILEP_MUTANT_BEAST_HORN },
     };
-    // XXX: this could be turned into a data structure
-    if (facets & (1 << BF_FIRE))
-        layers.push_back(TILEP_MUTANT_BEAST_FIRE + tier);
-    if (facets & (1 << BF_BAT))
-        layers.push_back(TILEP_MUTANT_BEAST_WING_BASE + tier);
-    if (facets & (1 << BF_OX))
-        layers.push_back(TILEP_MUTANT_BEAST_OX + tier);
-    if (facets & (1 << BF_WEIRD))
-        layers.push_back(TILEP_MUTANT_BEAST_WEIRD + tier);
-    if (facets & (1 << BF_STING))
-        layers.push_back(TILEP_MUTANT_BEAST_STING + tier);
-    if (facets & (1 << BF_BAT))
-        layers.push_back(TILEP_MUTANT_BEAST_WING_TOP + tier);
-    if (facets & (1 << BF_SHOCK))
-        layers.push_back(TILEP_MUTANT_BEAST_SHOCK + tier);
-    if (facets & (1 << BF_OX))
-        layers.push_back(TILEP_MUTANT_BEAST_HORN + tier);
+
+    for (auto &facet_layer : facet_layers)
+        if (facets & (1 << facet_layer.first))
+            layers.emplace_back(facet_layer.second + tier);
 }
 
 int mcache_mbeast::info(tile_draw_info *dinfo) const
