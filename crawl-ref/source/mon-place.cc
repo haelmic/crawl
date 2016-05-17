@@ -2260,7 +2260,7 @@ static const map<monster_type, band_set> bands_by_leader = {
     { MONS_SPARK_WASP,      { {0, 0, []() {
         return you.where_are_you == BRANCH_DEPTHS;
     }},                           {{ BAND_SPARK_WASPS, {1, 4} }}}},
-    { MONS_HOWLER_MONKEY,   { {2, 6}, {{ BAND_HOWLER_MONKEY, {1, 4} }}}},
+    { MONS_HOWLER_MONKEY,   { {2, 6}, {{ BAND_HOWLER_MONKEY, {1, 3} }}}},
     { MONS_GIANT_EYEBALL,   { {0, 0, []() {
         return branch_has_monsters(you.where_are_you)
             || !vault_mon_types.empty();
@@ -3213,7 +3213,7 @@ bool player_angers_monster(monster* mon)
 
         if (you.can_see(*mon))
         {
-            const string mname = mon->name(DESC_THE).c_str();
+            const string mname = mon->name(DESC_THE);
 
             switch (why)
             {

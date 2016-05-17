@@ -1366,7 +1366,6 @@ int get_shout_noise_level(const shout_type shout)
         return 4;
     case S_SOFT:
         return 6;
-    case S_GURGLE:
     case S_LOUD:
         return 10;
     case S_SHOUT2:
@@ -1780,6 +1779,8 @@ void name_zombie(monster* mon, monster_type mc, const string &mon_name)
         mon->mname = "Enchantress";
         mon->flags |= MF_NAME_ADJECTIVE;
     }
+    else if (mons_species(mc) == MONS_SERPENT_OF_HELL)
+        mon->mname = "";
 
     if (starts_with(mon->mname, "shaped "))
         mon->flags |= MF_NAME_SUFFIX;
@@ -4508,6 +4509,7 @@ string do_mon_str_replacements(const string &in_msg, const monster* mons,
         "roars",
         "screams",
         "bellows",
+        "bleats",
         "trumpets",
         "screeches",
         "buzzes",
@@ -5410,6 +5412,7 @@ void init_mutant_beast(monster &mons, short HD, vector<int> beast_facets,
         {
             case BF_BAT:
                 mons.props[MON_SPEED_KEY] = mons.speed * 2;
+                mons.calc_speed();
                 break;
             case BF_FIRE:
                 mons.spells.emplace_back(SPELL_FIRE_BREATH, 60,

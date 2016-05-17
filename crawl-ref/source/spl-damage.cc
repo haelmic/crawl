@@ -2765,7 +2765,7 @@ spret_type cast_toxic_radiance(actor *agent, int pow, bool fail, bool mon_tracer
     }
     else if (mon_tracer)
     {
-        for (actor_near_iterator ai(agent, LOS_NO_TRANS); ai; ++ai)
+        for (actor_near_iterator ai(agent->pos(), LOS_NO_TRANS); ai; ++ai)
         {
             if (!_toxic_can_affect(*ai) || mons_aligned(agent, *ai))
                 continue;
@@ -2927,7 +2927,10 @@ void handle_searing_ray()
     dec_mp(1);
 
     if (++you.attribute[ATTR_SEARING_RAY] > 3)
+    {
+        mpr("You finish channeling your searing ray.");
         end_searing_ray();
+    }
 }
 
 void end_searing_ray()

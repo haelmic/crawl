@@ -46,7 +46,6 @@
 #include "mon-cast.h"
 #include "mon-clone.h"
 #include "mon-death.h"
-#include "mon-pathfind.h"
 #include "mon-place.h"
 #include "mon-poly.h"
 #include "mon-tentacle.h"
@@ -3833,9 +3832,10 @@ bool monster::is_insubstantial() const
     return mons_class_flag(type, M_INSUBSTANTIAL);
 }
 
+/// Is this monster completely immune to Damnation-flavoured damage?
 bool monster::res_damnation() const
 {
-    return get_mons_resist(this, MR_RES_FIRE) >= 4; // XXX: ???
+    return get_mons_resist(this, MR_RES_DAMNATION);
 }
 
 int monster::res_fire() const
@@ -4874,19 +4874,6 @@ bool monster::is_cloud_safe(const coord_def &place) const
     return !mons_avoids_cloud(this, place);
 }
 
-static bool _can_path_to_staircase(const monster *mons, coord_def place)
-{
-    monster_pathfind mp;
-    mp.set_monster(mons);
-
-    for (rectangle_iterator ri(0); ri; ++ri)
-        if (feat_is_stair(grd(*ri)))
-            if (mp.init_pathfind(place, *ri, true, false))
-                return true;
-
-    return false;
-}
-
 bool monster::check_set_valid_home(const coord_def &place,
                                     coord_def &chosen,
                                     int &nvalid) const
@@ -4903,14 +4890,12 @@ bool monster::check_set_valid_home(const coord_def &place,
     if (!is_trap_safe(place, true))
         return false;
 
-    if (type == MONS_PLAYER_GHOST && !_can_path_to_staircase(this, place))
-        return false;
-
     if (one_chance_in(++nvalid))
         chosen = place;
 
     return true;
 }
+
 
 bool monster::is_location_safe(const coord_def &place)
 {
@@ -5071,7 +5056,7 @@ void monster::load_ghost_spells()
 bool monster::has_hydra_multi_attack() const
 {
     return mons_genus(mons_base_type(this)) == MONS_HYDRA
-        || mons_species(false) == MONS_SERPENT_OF_HELL;
+        || mons_species(true) == MONS_SERPENT_OF_HELL;
 }
 
 int monster::heads() const

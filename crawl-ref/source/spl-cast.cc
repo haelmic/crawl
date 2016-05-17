@@ -313,6 +313,14 @@ static int _apply_spellcasting_success_boosts(spell_type spell, int chance)
     return chance * fail_reduce / 100;
 }
 
+/**
+ * Calculate the player's failure rate with the given spell, including all
+ * modifiers. (Armour, mutations, statuses effects, etc.)
+ *
+ * @param spell     The spell in question.
+ * @return          A failure rate. This is *not* a percentage - for a human-
+ *                  readable version, call _get_true_fail_rate().
+ */
 int raw_spell_fail(spell_type spell)
 {
     int chance = 60;
@@ -492,16 +500,16 @@ static int _spell_enhancement(spell_type spell)
         enhanced += player_spec_death();
 
     if (typeflags & SPTYP_FIRE)
-        enhanced += player_spec_fire() - player_spec_cold();
+        enhanced += player_spec_fire();
 
     if (typeflags & SPTYP_ICE)
-        enhanced += player_spec_cold() - player_spec_fire();
+        enhanced += player_spec_cold();
 
     if (typeflags & SPTYP_EARTH)
-        enhanced += player_spec_earth() - player_spec_air();
+        enhanced += player_spec_earth();
 
     if (typeflags & SPTYP_AIR)
-        enhanced += player_spec_air() - player_spec_earth();
+        enhanced += player_spec_air();
 
     if (you.attribute[ATTR_SHADOWS])
         enhanced -= 2;
@@ -1304,7 +1312,11 @@ spret_type your_spells(spell_type spell, int powc,
         if (dir == DIR_DIR)
             mprf(MSGCH_PROMPT, "%s", prompt ? prompt : "Which direction?");
 
-        const bool needs_path = !testbits(flags, SPFLAG_TARGET);
+        const bool needs_path = !testbits(flags, SPFLAG_TARGET)
+                                // Apportation must be SPFLAG_TARGET, since a
+                                // shift-direction makes no sense for it, but
+                                // it nevertheless requires line-of-fire.
+                                || spell == SPELL_APPORTATION;
 
         const int range = calc_spell_range(spell, powc);
 
@@ -1339,11 +1351,8 @@ spret_type your_spells(spell_type spell, int powc,
         args.top_prompt = title;
         if (testbits(flags, SPFLAG_NOT_SELF))
             args.self = CONFIRM_CANCEL;
-        if (testbits(flags, SPFLAG_HELPFUL)
-            || testbits(flags, SPFLAG_ALLOW_SELF))
-        {
+        else
             args.self = CONFIRM_NONE;
-        }
         args.get_desc_func = additional_desc;
         if (!spell_direction(spd, beam, &args))
             return SPRET_ABORT;

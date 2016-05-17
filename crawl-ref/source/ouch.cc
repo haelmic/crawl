@@ -818,11 +818,7 @@ static int _apply_extra_harm(int dam, mid_t source)
     }
 
     if (do_extra_harm)
-    {
-        if (you.extra_harm())
-            did_god_conduct(DID_UNHOLY, 1); // The amulet is unholy.
         return dam * 5 / 4;
-    }
 
     return dam;
 }
@@ -972,8 +968,6 @@ void ouch(int dam, kill_method_type death_type, mid_t source, const char *aux,
 
     if (dam != INSTANT_DEATH)
     {
-        you.maybe_degrade_bone_armour(BONE_ARMOUR_HIT_RATIO);
-
         if (you.spirit_shield() && death_type != KILLED_BY_POISON
             && !(aux && strstr(aux, "flay_damage")))
         {

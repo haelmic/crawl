@@ -291,6 +291,7 @@ bool player_tracer(zap_type ztype, int power, bolt &pbolt, int range)
     pbolt.foe_ratio        = 100;
     pbolt.beam_cancelled   = false;
     pbolt.dont_stop_player = false;
+    pbolt.dont_stop_trees  = false;
 
     // Clear misc
     pbolt.seen          = false;
@@ -919,7 +920,7 @@ void bolt::burn_wall_effect()
 
 static bool _destroy_wall_msg(dungeon_feature_type feat, const coord_def& p)
 {
-    const char *msg = nullptr;
+    string msg = "";
     msg_channel_type chan = MSGCH_PLAIN;
     bool hear = player_can_hear(p);
     bool see = you.see_cell(p);
@@ -935,7 +936,7 @@ static bool _destroy_wall_msg(dungeon_feature_type feat, const coord_def& p)
         if (see)
         {
             msg = (feature_description_at(p, false, DESC_THE, false)
-                   + " explodes into countless fragments.").c_str();
+                   + " explodes into countless fragments.");
         }
         else if (hear)
         {
@@ -984,9 +985,9 @@ static bool _destroy_wall_msg(dungeon_feature_type feat, const coord_def& p)
         break;
     }
 
-    if (msg)
+    if (!msg.empty())
     {
-        mprf(chan, "%s", msg);
+        mprf(chan, "%s", msg.c_str());
         return true;
     }
     else
@@ -1065,6 +1066,34 @@ void bolt::affect_wall()
     {
         if (!can_affect_wall(grd(pos())))
             finish_beam();
+
+        // potentially warn about offending your god by burning/disinting trees
+        const bool burns_trees = can_burn_trees();
+        const bool god_relevant = you.religion == GOD_DITHMENOS && burns_trees
+                                  || you.religion == GOD_FEDHAS;
+        const string veto_key = burns_trees ? "veto_fire" : "veto_disintegrate";
+        const bool vetoed = env.markers.property_at(pos(), MAT_ANY, veto_key)
+                            == "veto";
+        // XXX: should check env knowledge for feat_is_tree()
+        if (god_relevant && feat_is_tree(grd(pos())) && !vetoed
+            && !is_targeting && YOU_KILL(thrower) && !dont_stop_trees)
+        {
+            const string prompt =
+                make_stringf("Are you sure you want to %s %s?",
+                             burns_trees ? "burn" : "destroy",
+                             feature_description_at(pos(), false, DESC_THE,
+                                                    false).c_str());
+
+            if (yesno(prompt.c_str(), false, 'n'))
+                dont_stop_trees = true;
+            else
+            {
+                canned_msg(MSG_OK);
+                beam_cancelled = true;
+                finish_beam();
+            }
+        }
+
         // The only thing that doesn't stop at walls.
         if (flavour != BEAM_DIGGING)
             finish_beam();
@@ -2322,6 +2351,7 @@ void bolt_parent_init(const bolt &parent, bolt &child)
     child.friend_info.dont_stop = parent.friend_info.dont_stop;
     child.foe_info.dont_stop    = parent.foe_info.dont_stop;
     child.dont_stop_player      = parent.dont_stop_player;
+    child.dont_stop_trees       = parent.dont_stop_trees;
 
 #ifdef DEBUG_DIAGNOSTICS
     child.quiet_debug    = parent.quiet_debug;
@@ -2783,7 +2813,8 @@ bool bolt::can_burn_trees() const
            || origin_spell == SPELL_BOLT_OF_FIRE
            || origin_spell == SPELL_BOLT_OF_MAGMA
            || origin_spell == SPELL_FIREBALL
-           || origin_spell == SPELL_EXPLOSIVE_BOLT;
+           || origin_spell == SPELL_EXPLOSIVE_BOLT
+           || origin_spell == SPELL_INNER_FLAME;
 }
 
 bool bolt::can_affect_wall(dungeon_feature_type wall) const
@@ -3241,8 +3272,7 @@ void bolt::tracer_affect_player()
     // Check whether thrower can see player, unless thrower == player.
     if (YOU_KILL(thrower))
     {
-        // Don't ask if we're aiming at ourselves.
-        if (!aimed_at_feet && !dont_stop_player && !harmless_to_player())
+        if (!dont_stop_player && !harmless_to_player())
         {
             string prompt = make_stringf("That %s is likely to hit you. Continue anyway?",
                                          item ? name.c_str() : "beam");
@@ -3251,6 +3281,7 @@ void bolt::tracer_affect_player()
             {
                 friend_info.count++;
                 friend_info.power += you.experience_level;
+                // Don't ask about aiming at ourself twice.
                 dont_stop_player = true;
             }
             else
@@ -3381,7 +3412,6 @@ bool bolt::misses_player()
                 finish_beam();
             }
             you.shield_block_succeeded(agent());
-            hit_shield(&you);
             if (!penet)
                 return true;
         }
@@ -4720,16 +4750,6 @@ bool bolt::god_cares() const
     return effect_known || effect_wanton;
 }
 
-/** Apply effects of this beam to a blocker.
- *
- *  @param blocker the actor that just blocked.
- */
-void bolt::hit_shield(actor* blocker) const
-{
-    if (blocker->is_player())
-        you.maybe_degrade_bone_armour(BONE_ARMOUR_HIT_RATIO);
-}
-
 // Return true if the block succeeded (including reflections.)
 bool bolt::attempt_block(monster* mon)
 {
@@ -4788,7 +4808,6 @@ bool bolt::attempt_block(monster* mon)
                 finish_beam();
             }
 
-            hit_shield(mon);
             mon->shield_block_succeeded(agent());
         }
     }
@@ -5185,7 +5204,7 @@ bool bolt::has_saving_throw() const
     case BEAM_HEALING:
     case BEAM_INVISIBILITY:
     case BEAM_DISPEL_UNDEAD:
-    case BEAM_ENSLAVE_SOUL:     // has a different saving throw
+    case BEAM_ENSLAVE_SOUL:
     case BEAM_BLINK_CLOSE:
     case BEAM_BLINK:
     case BEAM_MALIGN_OFFERING:
@@ -5229,7 +5248,8 @@ bool ench_flavour_affects_monster(beam_type flavour, const monster* mon,
              && !mon->is_summoned()
              && !mons_enslaved_body_and_soul(mon)
              && mon->attitude != ATT_FRIENDLY
-             && mons_intel(mon) >= I_HUMAN;
+             && mons_intel(mon) >= I_HUMAN
+             && mon->type != MONS_PANDEMONIUM_LORD;
         break;
 
     case BEAM_DISPEL_UNDEAD:

@@ -290,11 +290,9 @@ const vector<god_power> god_powers[NUM_GODS] =
     },
     // Pakellas
     {
+      { 0, "gain magical power from killing" },
       { 1, ABIL_PAKELLAS_QUICK_CHARGE,
            "spend your magic to charge your devices" },
-      { 2, "Pakellas will collect and distill excess magic from your kills.",
-           "Pakellas no longer collects and distills excess magic from your "
-           "kills." },
       { 3, ABIL_PAKELLAS_DEVICE_SURGE,
            "spend magic to empower your devices" },
       { 7, ABIL_PAKELLAS_SUPERCHARGE,
@@ -535,23 +533,34 @@ void dec_penance(god_type god, int val)
             }
 
             // TSO's halo is once more available.
-            if (god == GOD_SHINING_ONE
-                     && you.piety >= piety_breakpoint(0))
+            if (have_passive(passive_t::halo))
             {
                 mprf(MSGCH_GOD, "Your divine halo returns!");
                 invalidate_agrid(true);
             }
-            else if (god == GOD_QAZLAL && you.piety >= piety_breakpoint(0))
+
+            if (have_passive(passive_t::storm_shield))
             {
                 mprf(MSGCH_GOD, "A storm instantly forms around you!");
                 you.redraw_armour_class = true; // also handles shields
             }
             // When you've worked through all your penance, you get
             // another chance to make hostile slimes strict neutral.
-            else if (god == GOD_JIYVA)
+
+            if (have_passive(passive_t::neutral_slimes))
                 add_daction(DACT_SLIME_NEW_ATTEMPT);
-            else if (god == GOD_PAKELLAS)
+
+            if (have_passive(passive_t::identify_devices))
                 pakellas_id_device_charges();
+
+            if (have_passive(passive_t::friendly_plants)
+                && env.forest_awoken_until)
+            {
+                // XXX: add a dact here & on-join to handle offlevel
+                // awakened forests?
+                for (monster_iterator mi; mi; ++mi)
+                     mi->del_ench(ENCH_AWAKEN_FOREST);
+            }
         }
         else if (god == GOD_PAKELLAS)
         {
@@ -701,6 +710,8 @@ static void _inc_penance(god_type god, int val)
         }
         else if (god == GOD_QAZLAL)
         {
+            // Can't use have_passive(passive_t::storm_shield) because we
+            // just gained penance.
             if (you.piety >= piety_breakpoint(0))
             {
                 mprf(MSGCH_GOD, god, "The storm surrounding you dissipates.");
@@ -1040,7 +1051,7 @@ static bool _give_pakellas_gift()
 
     bool success = false;
     object_class_type basetype = OBJ_UNASSIGNED;
-    int subtype;
+    int subtype = -1;
 
     if (you.piety >= piety_breakpoint(0)
         && you.num_total_gifts[GOD_PAKELLAS] == 0)
@@ -1096,6 +1107,7 @@ static bool _give_pakellas_gift()
         success = acquirement(basetype, you.religion);
     else
     {
+        ASSERT(subtype >= 0);
         int thing_created = items(true, basetype, subtype, 1, 0,
                                   you.religion);
 
@@ -3474,7 +3486,6 @@ static void _join_zin()
 static void _join_pakellas()
 {
     mprf(MSGCH_GOD, "You stop regenerating magic.");
-    mprf(MSGCH_GOD, "You can now gain magical power from killing.");
     pakellas_id_device_charges();
     you.attribute[ATTR_PAKELLAS_EXTRA_MP] = POT_MAGIC_MP;
 }

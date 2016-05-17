@@ -1938,8 +1938,7 @@ static int _place_item_in_free_slot(item_def &it, int quant_got,
         set_ident_type(item, true);
 
     if ((item.base_type == OBJ_WANDS || item.base_type == OBJ_RODS)
-        && you_worship(GOD_PAKELLAS)
-        && in_good_standing(GOD_PAKELLAS))
+        && have_passive(passive_t::identify_devices))
     {
         if (item.base_type == OBJ_RODS)
             set_ident_flags(item, ISFLAG_KNOW_TYPE);
@@ -3615,15 +3614,13 @@ colour_t item_def::amulet_colour() const
     // (use an array of [name, colour] tuples/structs)
     switch (subtype_rnd % NDSC_JEWEL_PRI)
     {
-        case 0:             // "zirconium amulet"
-        case 9:             // "ivory amulet"
+        case 1:             // "zirconium amulet"
         case 10:            // "bone amulet"
         case 11:            // "platinum amulet"
         case 16:            // "pearl amulet"
         case 20:            // "diamond amulet"
-        case 24:            // "silver amulet"
             return LIGHTGREY;
-        case 1:             // "sapphire amulet"
+        case 0:             // "sapphire amulet"
         case 17:            // "blue amulet"
         case 26:            // "lapis lazuli amulet"
             return BLUE;
@@ -3640,16 +3637,18 @@ colour_t item_def::amulet_colour() const
         case 15:            // "cameo amulet"
             return RED;
         case 22:            // "steel amulet"
-        case 23:            // "cabochon amulet"
+        case 24:            // "silver amulet"
         case 27:            // "filigree amulet"
             return CYAN;
         case 13:            // "fluorescent amulet"
-        case 14:            // "crystal amulet"
+        case 14:            // "amethyst amulet"
+        case 23:            // "cabochon amulet"
             return MAGENTA;
         case 2:             // "golden amulet"
         case 5:             // "bronze amulet"
         case 6:             // "brass amulet"
         case 7:             // "copper amulet"
+        case 9:             // "citrine amulet"
         default:
             return BROWN;
     }

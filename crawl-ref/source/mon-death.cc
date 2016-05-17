@@ -1185,6 +1185,7 @@ static void _setup_inner_flame_explosion(bolt & beam, const monster& origin,
     beam.colour      = RED;
     beam.ex_size     = (size > SIZE_BIG) ? 2 : 1;
     beam.source_name = origin.name(DESC_A, true);
+    beam.origin_spell = SPELL_INNER_FLAME;
     beam.thrower     = (agent && agent->is_player()) ? KILL_YOU_MISSILE
                                                      : KILL_MON_MISSILE;
 }
@@ -1591,22 +1592,23 @@ static void _fire_kill_conducts(monster &mons, killer_type killer,
                            killer == KILL_YOU_CONF ||
                            killer == KILL_YOU_MISSILE;
     const bool pet_kill = _is_pet_kill(killer, killer_index);
-    const bool your_fault = your_kill && killer_index != YOU_FAULTLESS
-                            || pet_kill;
 
     // Pretend the monster is already dead, so that make_god_gifts_disappear
     // (and similar) don't kill it twice.
     unwind_var<int> fake_hp(mons.hit_points, 0);
 
     // if you or your pets didn't do it, no one cares
-    if (!your_fault)
+    if (!your_kill && !pet_kill)
         return;
 
+    // player gets credit for reflection kills, but not blame
+    const bool blameworthy = god_hates_killing(you.religion, &mons)
+                             && killer_index != YOU_FAULTLESS;
     // if you can't get piety for it & your god won't give penance/-piety for
     // it, no one cares
     // XXX: this will break holy death curses if they're added back...
     // but tbh that shouldn't really be in conducts anyway
-    if (!maybe_good_kill && !god_hates_killing(you.religion, &mons))
+    if (!maybe_good_kill && !blameworthy)
         return;
 
     mon_holy_type holiness = mons.holiness();
@@ -2139,7 +2141,9 @@ item_def* monster_die(monster* mons, killer_type killer,
                 }
 
                 // perhaps this should go to its own function
-                if (mp_heal && in_good_standing(GOD_PAKELLAS, 2))
+                if (mp_heal
+                    && have_passive(passive_t::bottle_mp)
+                    && !you_foodless_normally())
                 {
                     simple_god_message(" collects the excess magic power.");
                     you.attribute[ATTR_PAKELLAS_EXTRA_MP] -= mp_heal;
