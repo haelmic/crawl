@@ -5473,6 +5473,20 @@ void throw_monster_bits(const monster* mon)
     }
 }
 
+/// What spell should an ancestor have in their customizeable slot?
+static spell_type _ancestor_custom_spell(spell_type default_spell)
+{
+    const int specialization = hepliaklqana_specialization();
+    return specialization ? hepliaklqana_specialization_spell(specialization) :
+                            default_spell;
+}
+
+/// Add an ancestor spell to the given list.
+static void _add_ancestor_spell(monster_spells &spells, spell_type spell)
+{
+    spells.emplace_back(spell, 40, MON_SPELL_WIZARD);
+}
+
 /**
  * Set the correct spells for a given ancestor, corresponding to their HD and
  * type.
@@ -5489,46 +5503,24 @@ void set_ancestor_spells(monster &ancestor, bool notify)
         old_spells.emplace_back(spellslot.spell);
 
     ancestor.spells = {};
-
-    // list of req HD and spells
-    // must be listed from most desirable to least
-    static const map<monster_type, vector<pair<int, spell_type>>> splist = {
-        { MONS_ANCESTOR, {} },
-        { MONS_ANCESTOR_KNIGHT, {} },
-        { MONS_ANCESTOR_BATTLEMAGE, {
-            { 18, SPELL_LEHUDIBS_CRYSTAL_SPEAR },
-            { 16, SPELL_CORROSIVE_BOLT },
-            { 13, SPELL_IRON_SHOT },
-            { 10, SPELL_BOLT_OF_MAGMA },
-            { 8,  SPELL_THROW_ICICLE },
-            { 6,  SPELL_STONE_ARROW },
-            { 3,  SPELL_THROW_FROST },
-            { 1,  SPELL_MAGIC_DART },
-        } },
-        { MONS_ANCESTOR_HEXER, {
-            { 17, SPELL_MASS_CONFUSION },
-            { 13, SPELL_ENGLACIATION },
-            { 10, SPELL_PETRIFY },
-            { 7,  SPELL_CONFUSE },
-            { 4,  SPELL_SLOW },
-            { 1,  SPELL_CORONA },
-        } },
-    };
-    static const int MAX_SPELLS = 2;
     const int HD = ancestor.get_experience_level();
-
-    const vector<pair<int, spell_type>> spells_for_class
-        = *map_find(splist, ancestor.type);
-    for (auto spellspec : spells_for_class)
+    switch (ancestor.type)
     {
-        if (spellspec.first <= HD)
-        {
-            ancestor.spells.emplace_back(spellspec.second, 30,
-                                         MON_SPELL_WIZARD);
-
-            if (ancestor.spells.size() >= MAX_SPELLS)
-                break;
-        }
+    case MONS_ANCESTOR_BATTLEMAGE:
+        _add_ancestor_spell(ancestor.spells,
+                            _ancestor_custom_spell(SPELL_THROW_FROST));
+        _add_ancestor_spell(ancestor.spells, HD >= 18 ?
+                                             SPELL_LEHUDIBS_CRYSTAL_SPEAR :
+                                             SPELL_STONE_ARROW);
+        break;
+    case MONS_ANCESTOR_HEXER:
+        _add_ancestor_spell(ancestor.spells,
+                            _ancestor_custom_spell(SPELL_SLOW));
+        _add_ancestor_spell(ancestor.spells, HD >= 14 ? SPELL_MASS_CONFUSION
+                                                      : SPELL_CONFUSE);
+        break;
+    default:
+        break;
     }
 
     if (HD >= 14)

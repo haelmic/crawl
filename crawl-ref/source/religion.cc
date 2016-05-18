@@ -82,6 +82,7 @@
 static weapon_type _hepliaklqana_weapon_type(monster_type mc, int HD);
 static brand_type _hepliaklqana_weapon_brand(monster_type mc, int HD);
 static armour_type _hepliaklqana_shield_type(monster_type mc, int HD);
+static special_armour_type _hepliaklqana_shield_ego(int HD);
 
 const vector<god_power> god_powers[NUM_GODS] =
 {
@@ -1260,6 +1261,21 @@ string hepliaklqana_ally_name()
 }
 
 /**
+ * What specialization has the player chosen for their ancestor, if any?
+ *
+ * @return  The appropriate ability_type enum (e.g.
+ *          ABIL_HEPLIAKLQANA_KNIGHT_REACHING), or 0 if no specialization was
+ *          chosen.
+ */
+int hepliaklqana_specialization()
+{
+    // using get_int() without checking for exists would make it exist
+    if (you.props.exists(HEPLIAKLQANA_SPECIALIZATION_KEY))
+        return you.props[HEPLIAKLQANA_SPECIALIZATION_KEY].get_int();
+    return 0;
+}
+
+/**
  * How much HD should the ally granted by Hepliaklqana have?
  *
  * @return      The player's xl * 2/3.
@@ -1318,12 +1334,45 @@ static void _regain_memory(const monster &ancestor, string memory)
          memory.c_str());
 }
 
+static string _item_ego_name(object_class_type base_type, int brand)
+{
+    switch (base_type)
+    {
+    case OBJ_WEAPONS:
+    {
+        // 'remembers... draining' reads better than 'drain', but 'flame'
+        // reads better than 'flaming'
+        const bool terse = brand == SPWPN_FLAMING
+                           || brand == SPWPN_ANTIMAGIC;
+        return brand_type_name(brand, terse);
+    }
+    case OBJ_ARMOUR:
+        // XXX: hack
+        return "reflection";
+    default:
+        die("unsupported object type");
+    }
+}
+
 /// Print a message for an ancestor's item being gained/type upgraded.
 static void _regain_item_memory(const monster &ancestor,
                                 object_class_type base_type,
-                                int sub_type)
+                                int sub_type,
+                                int brand)
 {
-    _regain_memory(ancestor, item_base_name(base_type, sub_type));
+    const string base_name = item_base_name(base_type, sub_type);
+    if (!brand)
+    {
+        _regain_memory(ancestor, base_name);
+        return;
+    }
+
+    const string ego_name = _item_ego_name(base_type, brand);
+    const string item_name
+        = make_stringf("%s of %s",
+                       item_base_name(base_type, sub_type).c_str(),
+                       ego_name.c_str());
+    _regain_memory(ancestor, item_name);
 }
 
 /**
@@ -1378,23 +1427,20 @@ void upgrade_hepliaklqana_ancestor(bool quiet_force)
             upgrade_hepliaklqana_weapon(*ancestor, *ancestor->weapon());
 
         const weapon_type wpn = _hepliaklqana_weapon_type(ancestor->type, hd);
+        const brand_type brand = _hepliaklqana_weapon_brand(ancestor->type, hd);
         if (wpn != _hepliaklqana_weapon_type(ancestor->type, old_hd)
             && !quiet_force)
         {
-            _regain_item_memory(*ancestor, OBJ_WEAPONS, wpn);
+            _regain_item_memory(*ancestor, OBJ_WEAPONS, wpn, brand);
         }
-
-        const brand_type brand = _hepliaklqana_weapon_brand(ancestor->type, hd);
-        if (brand != _hepliaklqana_weapon_brand(ancestor->type, old_hd)
-            && !quiet_force)
+        else if (brand != _hepliaklqana_weapon_brand(ancestor->type, old_hd)
+                 && !quiet_force)
         {
             mprf("%s remembers %s %s %s.",
                  ancestor->name(DESC_YOUR, true).c_str(),
                  ancestor->pronoun(PRONOUN_POSSESSIVE, true).c_str(),
                  apostrophise(item_base_name(OBJ_WEAPONS, wpn)).c_str(),
                  brand_type_name(brand, brand != SPWPN_DRAINING));
-            // 'remembers... draining' reads better than 'drain', but 'flame'
-            // reads better than 'flaming'
         }
     }
     // but shields can't be lost, and *can* be gained (knight at hd 5)
@@ -1411,11 +1457,60 @@ void upgrade_hepliaklqana_ancestor(bool quiet_force)
     if (shld != _hepliaklqana_shield_type(ancestor->type, old_hd)
         && !quiet_force)
     {
-        _regain_item_memory(*ancestor, OBJ_ARMOUR, shld);
+        // doesn't currently support egos varying separately from shield types
+        _regain_item_memory(*ancestor, OBJ_ARMOUR, shld,
+                            _hepliaklqana_shield_ego(hd));
     }
 
     if (quiet_force)
         return;
+}
+
+/**
+ * For a spellcasting ancestor (e.g. a hexer or battlemage), what spell is
+ * granted by a given specialization?
+ *
+ * @param specialization    The specialization in question; e.g.
+ *                          ABIL_HEPLIAKLQANA_BATTLEMAGE_ICEBLAST.
+ * @return                  The appropriate spell type, e.g. SPELL_ICEBLAST.
+ *                          By default, returns NUM_SPELLS.
+ */
+spell_type hepliaklqana_specialization_spell(int specialization)
+{
+    switch (specialization)
+    {
+    case ABIL_HEPLIAKLQANA_BATTLEMAGE_ICEBLAST:
+        return SPELL_ICEBLAST;
+    case ABIL_HEPLIAKLQANA_BATTLEMAGE_MAGMA:
+        return SPELL_BOLT_OF_MAGMA;
+    case ABIL_HEPLIAKLQANA_HEXER_PARALYSE:
+        return SPELL_PARALYSE;
+    case ABIL_HEPLIAKLQANA_HEXER_ENGLACIATION:
+        return SPELL_ENGLACIATION;
+    default:
+        return NUM_SPELLS;
+    }
+}
+
+/**
+ * For an ancestor knight, what weapon is granted by a given specialization?
+ *
+ * @param specialization    The specialization in question; e.g.
+ *                          ABIL_HEPLIAKLQANA_KNIGHT_REACHING.
+ * @return                  The appropriate weapon type, e.g. WPN_BROAD_AXE.
+ *                          By default, returns NUM_WEAPONS.
+ */
+weapon_type hepliaklqana_specialization_weapon(int specialization)
+{
+    switch (specialization)
+    {
+    case ABIL_HEPLIAKLQANA_KNIGHT_REACHING:
+        return WPN_DEMON_TRIDENT;
+    case ABIL_HEPLIAKLQANA_KNIGHT_CLEAVING:
+        return WPN_BROAD_AXE;
+    default:
+        return NUM_WEAPONS;
+    }
 }
 
 /**
@@ -1429,14 +1524,19 @@ static weapon_type _hepliaklqana_weapon_type(monster_type mc, int HD)
 {
     switch (mc)
     {
-        case MONS_ANCESTOR_HEXER:
-            return HD < 16 ? WPN_DAGGER : WPN_QUICK_BLADE;
-        case MONS_ANCESTOR_KNIGHT:
-            return HD < 8 ? WPN_LONG_SWORD : WPN_BROAD_AXE;
-        case MONS_ANCESTOR_BATTLEMAGE:
-            return WPN_QUARTERSTAFF;
-        default:
-            return NUM_WEAPONS; // should never happen
+    case MONS_ANCESTOR_HEXER:
+        return HD < 18 ? WPN_DAGGER : WPN_QUICK_BLADE;
+    case MONS_ANCESTOR_KNIGHT:
+    {
+        const int specialization = hepliaklqana_specialization();
+        return specialization ?
+               hepliaklqana_specialization_weapon(specialization) :
+               WPN_LONG_SWORD;
+    }
+    case MONS_ANCESTOR_BATTLEMAGE:
+        return HD < 14 ? WPN_QUARTERSTAFF : WPN_LAJATANG;
+    default:
+        return NUM_WEAPONS; // should never happen
     }
 }
 
@@ -1452,14 +1552,15 @@ static brand_type _hepliaklqana_weapon_brand(monster_type mc, int HD)
     switch (mc)
     {
         case MONS_ANCESTOR_HEXER:
-            return HD < 9 ?    SPWPN_NORMAL :
-                   HD < 18 ?   SPWPN_DRAINING :
+            return HD < 18 ?   SPWPN_DRAINING :
                                SPWPN_ANTIMAGIC;
         case MONS_ANCESTOR_KNIGHT:
-            return HD < 10 ?   SPWPN_NORMAL :
-                   HD < 18 ?   SPWPN_FLAMING :
-                               SPWPN_SPEED;
+            return !hepliaklqana_specialization() ?   SPWPN_NORMAL :
+                   HD < 18 ?                          SPWPN_FLAMING :
+                                                      SPWPN_SPEED;
         case MONS_ANCESTOR_BATTLEMAGE:
+            return HD < 14 ?   SPWPN_NORMAL :
+                               SPWPN_FREEZING;
         default:
             return SPWPN_NORMAL;
     }
@@ -1500,13 +1601,14 @@ static armour_type _hepliaklqana_shield_type(monster_type mc, int HD)
 {
     if (mc != MONS_ANCESTOR_KNIGHT)
         return NUM_ARMOURS;
-    if (HD < 5)
-        return NUM_ARMOURS;
-    if (HD < 9)
-        return ARM_BUCKLER;
-    if (HD < 17)
+    if (HD < 14)
         return ARM_SHIELD;
     return ARM_LARGE_SHIELD;
+}
+
+static special_armour_type _hepliaklqana_shield_ego(int HD)
+{
+    return HD < 14 ? SPARM_NORMAL : SPARM_REFLECTION;
 }
 
 /**
@@ -1528,7 +1630,7 @@ void upgrade_hepliaklqana_shield(const monster &ancestor, item_def &item)
 
     item.base_type = OBJ_ARMOUR;
     item.sub_type = shield_type;
-    item.brand = SPARM_NORMAL;
+    item.brand = _hepliaklqana_shield_ego(HD);
     item.plus = 0;
     item.flags |= ISFLAG_KNOW_TYPE | ISFLAG_SUMMONED;
     item.quantity = 1;
@@ -2285,13 +2387,11 @@ static void _gain_piety_point()
 
             you.one_time_ability_used.set(you.religion);
         }
-        if (you_worship(GOD_HEPLIAKLQANA))
+        if (you_worship(GOD_HEPLIAKLQANA)
+            && rank == 2 && !you.props.exists(HEPLIAKLQANA_ALLY_TYPE_KEY))
         {
-            if (rank == 2 && !you.props.exists(HEPLIAKLQANA_ALLY_TYPE_KEY))
-            {
-                god_speaks(you.religion,
-                           "You may now remember your ancestor's life.");
-            }
+           god_speaks(you.religion,
+                      "You may now remember your ancestor's life.");
         }
     }
 
