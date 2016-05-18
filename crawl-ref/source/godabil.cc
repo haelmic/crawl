@@ -6952,7 +6952,11 @@ static string _ancestor_specialization_prompt(int specialization)
     string spec_desc = _specialization_description(specialization);
     // we want this in the prompt, but it's clutter in notes/milestones
     if (you.props[HEPLIAKLQANA_ALLY_TYPE_KEY].get_int() == MONS_ANCESTOR_KNIGHT)
-        spec_desc += " of flaming"; // hacky...
+    {
+        // the following is hacky on several levels
+        const string ego = you.experience_level < 27 ? "flaming" : "speed";
+        spec_desc += " of " + ego;
+    }
     return make_stringf("Are you sure you want to remember your ancestor %s?",
                         spec_desc.c_str());
 }

@@ -867,13 +867,13 @@ their name and gender to those you recall. This does not take any time.
 %%%%
 Knight: Demon Trident ability
 
-Remember your ancestor as wielding a flaming demon trident, a weapon capable of
-reaching past allies (such as yourself) to attack foes. This choice is
+Remember your ancestor as wielding an enchanted demon trident, a weapon capable
+of reaching past allies (such as yourself) to attack foes. This choice is
 permanent and cannot be undone.
 %%%%
 Knight: Broad Axe ability
 
-Remember your ancestor as wielding a flaming broad axe, a weapon capable of
+Remember your ancestor as wielding an enchanted broad axe, a weapon capable of
 cleaving through many surrounding foes with each blow. This choice is permanent
 and cannot be undone.
 %%%%
