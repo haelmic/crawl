@@ -1414,21 +1414,8 @@ void upgrade_hepliaklqana_ancestor(bool quiet_force)
         _regain_item_memory(*ancestor, OBJ_ARMOUR, shld);
     }
 
-    // XXX: deduplicate me!
-    if (hd == 13 && ancestor->type == MONS_ANCESTOR_KNIGHT && !quiet_force)
-    {
-        mprf("%s remembers %s %s reflectiveness.",
-             ancestor->name(DESC_YOUR, true).c_str(),
-             ancestor->pronoun(PRONOUN_POSSESSIVE, true).c_str(),
-             apostrophise(item_base_name(OBJ_ARMOUR, shld)).c_str());
-    }
-
     if (quiet_force)
         return;
-
-    // spiny
-    if (hd == 16 && ancestor->type == MONS_ANCESTOR_KNIGHT)
-        _regain_memory(*ancestor, "spiked armour");
 }
 
 /**
@@ -1541,7 +1528,7 @@ void upgrade_hepliaklqana_shield(const monster &ancestor, item_def &item)
 
     item.base_type = OBJ_ARMOUR;
     item.sub_type = shield_type;
-    item.brand = HD < 13 ? SPARM_NORMAL : SPARM_REFLECTION;
+    item.brand = SPARM_NORMAL;
     item.plus = 0;
     item.flags |= ISFLAG_KNOW_TYPE | ISFLAG_SUMMONED;
     item.quantity = 1;
