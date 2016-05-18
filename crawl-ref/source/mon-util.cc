@@ -346,25 +346,6 @@ static resists_t _beast_facet_resists(beast_facet facet)
     return lookup(resists, facet, 0);
 }
 
-/**
- * What special resistances does a hepliaklqana-provided ancestor have?
- *
- * @param HD    The ancestor's current HD.
- * @return      A bitfield of resists.
- */
-static resists_t _hepliaklqana_ancestor_resists(int HD)
-{
-    resists_t resists = MR_NO_FLAGS;
-    if (!crawl_state.need_save) // on main menu or otherwise don't have 'you'
-        return resists;
-
-    if (HD >= you.props[HEPLIAKLQANA_RESIST_FIRE_KEY].get_int())
-        resists |= MR_RES_FIRE;
-    if (HD >= you.props[HEPLIAKLQANA_RESIST_COLD_KEY].get_int())
-        resists |= MR_RES_COLD;
-    return resists;
-}
-
 resists_t get_mons_class_resists(monster_type mc)
 {
     const monsterentry *me = get_monster_data(mc);
@@ -403,9 +384,6 @@ resists_t get_mons_resists(const monster* mon)
     if (mon->props.exists(MUTANT_BEAST_FACETS))
         for (auto facet : mon->props[MUTANT_BEAST_FACETS].get_vector())
             resists |= _beast_facet_resists((beast_facet)facet.get_int());
-
-    if (mons_is_hepliaklqana_ancestor(mon->type))
-        resists |= _hepliaklqana_ancestor_resists(mon->get_experience_level());
 
     // This is set from here in case they're undead due to the
     // MF_FAKE_UNDEAD flag. See the comment in get_mons_class_resists.

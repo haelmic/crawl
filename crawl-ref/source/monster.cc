@@ -5293,8 +5293,6 @@ bool monster::can_see_invisible(bool calc_unid) const
         return ghost->see_invis;
     else if (mons_class_sees_invis(type, base_monster))
         return true;
-    else if (mons_is_hepliaklqana_ancestor(type) && hit_dice >= 15)
-        return true;
     else if (has_facet(BF_WEIRD))
         return true;
 

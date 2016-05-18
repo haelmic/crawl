@@ -1326,31 +1326,6 @@ static void _regain_item_memory(const monster &ancestor,
     _regain_memory(ancestor, item_base_name(base_type, sub_type));
 }
 
-struct hepliaklqana_unlock
-{
-    string description;
-    string key;
-};
-
-/**
- * Array of unlocks for Hepliaklqana ancestors. If you add anything to this list,
- * existing games will need you.props[key] set to an int from 0-28.
- */
-static const hepliaklqana_unlock hepliaklqana_unlocks[] =
-{
-    {
-        "ring of protection from fire",
-        HEPLIAKLQANA_RESIST_FIRE_KEY,
-    },
-    {
-        "ring of protection from cold",
-        HEPLIAKLQANA_RESIST_COLD_KEY,
-    },
-    {
-        "hat of see invisible",
-        HEPLIAKLQANA_SINV_KEY,
-    },
-};
 /**
  * Update the ancestor's stats after the player levels up. Upgrade HD and HP,
  * and give appropriate messaging for that and any other notable upgrades
@@ -1450,10 +1425,6 @@ void upgrade_hepliaklqana_ancestor(bool quiet_force)
 
     if (quiet_force)
         return;
-
-    for (const auto &unlock : hepliaklqana_unlocks)
-        if (you.props[unlock.key].get_int() == hd)
-            _regain_memory(*ancestor, unlock.description.c_str());
 
     // spiny
     if (hd == 16 && ancestor->type == MONS_ANCESTOR_KNIGHT)
@@ -3394,17 +3365,6 @@ static void _join_hepliaklqana()
         you.props[HEPLIAKLQANA_ALLY_NAME_KEY] = _make_ancestor_name(female);
         you.props[HEPLIAKLQANA_ALLY_GENDER_KEY] = female ? GENDER_FEMALE
                                                          : GENDER_MALE;
-    }
-    int hepliaklqana_unlock_hds[] = { 11, 12, 15 };
-    shuffle_array(hepliaklqana_unlock_hds);
-    COMPILE_CHECK(ARRAYSZ(hepliaklqana_unlocks)
-                  == ARRAYSZ(hepliaklqana_unlock_hds));
-    for (size_t i=0; i<ARRAYSZ(hepliaklqana_unlocks); i++)
-    {
-        hepliaklqana_unlock unlock = hepliaklqana_unlocks[i];
-        int hd = hepliaklqana_unlock_hds[i];
-        you.props[unlock.key] = hd;
-        dprf("Set the unlock time for %s to %d", unlock.description.c_str(), hd);
     }
 
     // Complimentary ancestor upon joining.
