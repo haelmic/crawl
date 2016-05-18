@@ -7097,8 +7097,8 @@ static void _transfer_slow_nearby(coord_def destination)
         if (!mon || mons_is_hepliaklqana_ancestor(mon->type))
             continue;
 
-        // ~3-6 turns at 0 invo, ~6-18 turns at 27 invo
-        const int dur = random_range(30 + you.skill(SK_INVOCATIONS, 3),
+        // ~3-6 turns at 0 invo, ~6-20 turns at 27 invo
+        const int dur = random_range(30 + you.skill(SK_INVOCATIONS, 1),
                                      60 + you.skill(SK_INVOCATIONS, 5));
         // XXX: consider adjusting by target HD?
         if (mon->add_ench(mon_enchant(ENCH_SLOW, 0, &you, dur)))
