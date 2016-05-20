@@ -6900,7 +6900,7 @@ bool hepliaklqana_choose_ancestor_type(int ancestor_choice)
         set_ancestor_spells(*ancestor);
     }
 
-    simple_god_message(" will remember this.");
+    god_speaks(you.religion, "It is so.");
     take_note(Note(NOTE_ANCESTOR_TYPE, 0, 0, ancestor_type_name));
     const string mile_text
         = make_stringf("remembered their ancestor %s as %s.",
@@ -6988,7 +6988,7 @@ bool hepliaklqana_specialize_ancestor(int specialization)
 
     you.props[HEPLIAKLQANA_SPECIALIZATION_KEY] = specialization;
     upgrade_hepliaklqana_ancestor(true);
-    simple_god_message(" will remember this.");
+    god_speaks(you.religion, "It is so.");
 
     const string spec_desc = _specialization_description(specialization);
     take_note(Note(NOTE_ANCESTOR_SPECIALIZATION, 0, 0, spec_desc));
