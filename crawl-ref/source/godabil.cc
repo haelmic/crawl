@@ -7206,11 +7206,9 @@ spret_type hepliaklqana_transference(bool fail)
 static void _hepliaklqana_choose_name()
 {
     const string old_name = hepliaklqana_ally_name();
-    string prompt  = make_stringf("Remember %s name as what? ",
-                                  apostrophise(old_name).c_str());
-
     char buf[18];
-    int ret = msgwin_get_line(prompt, buf, sizeof buf, nullptr, old_name);
+    int ret = msgwin_get_line("What was your greatest ancestor's name? ",
+                              buf, sizeof buf, nullptr, old_name);
     if (ret)
     {
         canned_msg(MSG_OK);

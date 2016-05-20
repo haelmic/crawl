@@ -619,9 +619,6 @@ static const ability_def Ability_List[] =
     { ABIL_HEPLIAKLQANA_TYPE_HEXER,        "Ancestor Life: Hexer",
         0, 0, 0, 0, {FAIL_INVO}, abflag::NONE },
 
-    { ABIL_HEPLIAKLQANA_IDENTITY,  "Ancestor Identity",
-        0, 0, 0, 0, {FAIL_INVO}, abflag::INSTANT },
-
     { ABIL_HEPLIAKLQANA_KNIGHT_REACHING, "Knight: Demon Trident",
         0, 0, 0, 0, {FAIL_INVO}, abflag::NONE },
     { ABIL_HEPLIAKLQANA_KNIGHT_CLEAVING, "Knight: Broad Axe",
@@ -3080,10 +3077,6 @@ static spret_type _do_ability(const ability_def& abil, bool fail)
             return SPRET_ABORT;
         break;
 
-    case ABIL_HEPLIAKLQANA_IDENTITY:
-        hepliaklqana_choose_identity();
-        return SPRET_ABORT; // always free
-
     case ABIL_HEPLIAKLQANA_KNIGHT_REACHING:
     case ABIL_HEPLIAKLQANA_KNIGHT_CLEAVING:
     case ABIL_HEPLIAKLQANA_BATTLEMAGE_ICEBLAST:
@@ -3661,7 +3654,6 @@ int find_ability_slot(const ability_type abil, char firstletter)
     case ABIL_HEPLIAKLQANA_TYPE_KNIGHT:
     case ABIL_HEPLIAKLQANA_TYPE_BATTLEMAGE:
     case ABIL_HEPLIAKLQANA_TYPE_HEXER:
-    case ABIL_HEPLIAKLQANA_IDENTITY: // move this?
     case ABIL_HEPLIAKLQANA_KNIGHT_REACHING:
     case ABIL_HEPLIAKLQANA_KNIGHT_CLEAVING:
     case ABIL_HEPLIAKLQANA_BATTLEMAGE_ICEBLAST:
