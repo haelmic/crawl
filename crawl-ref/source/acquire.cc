@@ -686,7 +686,6 @@ static int _acquirement_misc_subtype(bool /*divine*/, int & /*quantity*/)
         return MISC_CRYSTAL_BALL_OF_ENERGY;
     }
 
-    // Total weight if none have been seen is 100.
     const vector<pair<int, int> > choices =
     {
         // These have charges, so give them a constant weight.
