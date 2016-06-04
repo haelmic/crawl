@@ -105,6 +105,7 @@ static const char *skill_titles[NUM_SKILLS][6] =
 
     // These titles apply to atheists only, worshippers of the various gods
     // use the god titles instead, depending on piety or, in Gozag's case, gold.
+    // or, in U's case, invocations skill.
     {"Invocations",    "Unbeliever",    "Agnostic",        "Dissident",       "Heretic",        "Apostate"},
     {"Evocations",     "Charlatan",     "Prestidigitator", "Fetichist",       "Evocator",       "Talismancer"},
 };
@@ -289,7 +290,7 @@ static void _change_skill_level(skill_type exsk, int n)
 
     if (you.skills[exsk] - n == MAX_SKILL_LEVEL)
     {
-        you.train[exsk] = 1;
+        you.train[exsk] = TRAINING_ENABLED;
         need_reset = true;
     }
 
@@ -570,12 +571,12 @@ void init_train()
 {
     for (int i = 0; i < NUM_SKILLS; ++i)
         if (you.can_train[i] && you.skill_points[i])
-            you.train[i] = you.train_alt[i] = true;
+            you.train[i] = you.train_alt[i] = TRAINING_ENABLED;
         else
         {
             // Skills are on by default in auto mode and off in manual.
-            you.train[i] = you.auto_training;
-            you.train_alt[i] = !you.auto_training;
+            you.train[i] = (training_status)you.auto_training;
+            you.train_alt[i] = (training_status)!you.auto_training;
         }
 }
 
@@ -802,8 +803,8 @@ static bool _level_up_check(skill_type sk, bool simu)
         you.training[sk] = 0;
         if (!simu)
         {
-            you.train[sk] = 0;
-            you.train_alt[sk] = 0;
+            you.train[sk] = TRAINING_DISABLED;
+            you.train_alt[sk] = TRAINING_DISABLED;
         }
         return true;
     }
